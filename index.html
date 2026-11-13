@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prévia do Rancho</title>
+<meta name="description" content="Cálculo da prévia do almoço do Rancho pela catraca">
+<meta name="theme-color" content="#163E66">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icone-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Prévia">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=JetBrains+Mono:wght@500&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+:root{
+  --paper:#EDF1F4; --surface:#FFFFFF; --sunk:#E2E8EE; --ink:#0F1E2E; --muted:#56657A; --line:#CCD6E0;
+  --accent:#163E66; --accent-ink:#FFFFFF; --accent-soft:#DCE6F1;
+  --ok:#1D6F45; --ok-soft:#DCEFE3; --bad:#AE2A20; --bad-soft:#F7DFDB; --warn:#875700; --warn-soft:#F5EAD0;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root{
+  --paper:#0B1219; --surface:#121C27; --sunk:#0D1620; --ink:#E3EBF2; --muted:#93A3B5; --line:#273749;
+  --accent:#8FBCE8; --accent-ink:#0B1219; --accent-soft:#1A2E45;
+  --ok:#5DCB93; --ok-soft:#13311F; --bad:#F08D83; --bad-soft:#3B1B18; --warn:#E4B252; --warn-soft:#382A0F; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;margin:0}
+.wrap{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+.bar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.bar-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:12px 10px;flex-wrap:wrap}
+.code{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.brand h1{font-size:26px;line-height:1.05;text-transform:uppercase}
+.tabs{display:flex;gap:4px;background:var(--sunk);padding:3px;border-radius:9px}
+.tabs button{border:0;background:transparent;padding:6px 14px;border-radius:7px;font-family:var(--f-display);font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+main{padding-block:16px 110px}
+.view{display:flex;flex-direction:column;gap:16px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.sec-h{display:flex;align-items:baseline;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--sunk)}
+.sec-n{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:500}
+.sec-h h2{font-size:20px;text-transform:uppercase}
+.sec-b{padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+@media (max-width:440px){.grid2{grid-template-columns:1fr}}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld>span{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+input,select,textarea{width:100%;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:16px}
+input.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;font-size:18px}
+input.big{font-size:26px;padding:12px}
+textarea{min-height:70px;resize:vertical}
+input:disabled,textarea:disabled{background:var(--sunk);color:var(--muted)}
+input.req{border-color:var(--bad);background:var(--bad-soft)}
+.note{font-size:13px;color:var(--muted);margin:0}
+.derived{display:flex;justify-content:space-between;align-items:baseline;padding:8px 12px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.derived b{font-family:var(--f-mono);font-size:18px}
+
+.result{border:2px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.result .lbl{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.06em;font-size:18px;color:var(--muted)}
+.result .val{font-family:var(--f-display);font-size:72px;line-height:1;font-variant-numeric:tabular-nums;color:var(--accent)}
+.result .sub{font-size:14px;color:var(--muted)}
+.result.neg{border-color:var(--bad);background:var(--bad-soft)}
+.result.neg .val{color:var(--bad)}
+.result.vazio .val{color:var(--muted)}
+.avisos{display:flex;flex-direction:column;gap:6px}
+.aviso{border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-weight:600;font-size:14.5px}
+.aviso.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+
+table.lt{width:100%;border-collapse:collapse;font-size:13.5px}
+#leiturasWrap{overflow-x:auto}
+.lt th{text-align:right;font-family:var(--f-display);text-transform:uppercase;font-size:13px;letter-spacing:.03em;color:var(--muted);padding:6px 4px;border-bottom:1px solid var(--line)}
+.lt th:first-child,.lt td:first-child{text-align:left}
+.lt td{padding:6px 4px;border-bottom:1px dashed var(--line);text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.lt td.neg{color:var(--bad);font-weight:600}
+.lt td.x{width:30px;padding:0 0 0 4px}
+.mini{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 9px;font-size:14px;font-weight:700;color:var(--bad)}
+
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 16px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:6px;justify-content:center;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.ghost{background:transparent}
+.btn.wide{width:100%;padding:13px 16px;font-size:16px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.lock{border:1px solid var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lock p{margin:0;font-weight:600}
+
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.foot .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:10px}
+.savest{font-size:13px;color:var(--muted);min-width:0}
+.savest b{display:block;color:var(--ink);font-size:14px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.panel h2{font-size:20px;text-transform:uppercase}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hlist{display:flex;flex-direction:column;gap:8px}
+.hcard{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.hdate{display:flex;flex-direction:column;align-items:center;min-width:48px;border-right:1px solid var(--line);padding-right:12px}
+.hdate b{font-family:var(--f-display);font-size:24px;line-height:1}
+.hdate span{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em}
+.hmain{min-width:0}.hmain p{margin:0}
+.hcard-t{font-weight:600}
+.hcard-m{font-size:13px;color:var(--muted)}
+.pill{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.pill.rasc{background:var(--warn-soft);color:var(--warn)}
+.pill.conc{background:var(--ok-soft);color:var(--ok)}
+.hact{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.hact .btn{padding:6px 12px;font-size:14px}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:24px 16px;text-align:center;color:var(--muted)}
+
+.gate{position:fixed;inset:0;z-index:70;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow-y:auto}
+.gate-c{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:flex;flex-direction:column;gap:14px}
+.gate-c h1{font-size:30px;text-transform:uppercase;line-height:1.05}
+.gate-err{margin:0;color:var(--bad);font-weight:600;font-size:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:80;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:9px;font-weight:600;font-size:14.5px;max-width:min(92vw,520px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.modal{position:fixed;inset:0;z-index:75;background:rgba(5,12,20,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-c{background:var(--surface);border-radius:12px;padding:18px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.modal-c p{margin:0;font-size:16px}
+.modal-c .row{justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap bar-top">
+    <div class="brand"><span class="code">Almoço · Controle pela catraca</span><h1>Prévia do Rancho</h1></div>
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-view="form" aria-selected="true">Prévia</button>
+      <button type="button" role="tab" data-view="hist" aria-selected="false">Histórico</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view" id="view-form">
+    <div class="lock" id="lockBanner" hidden>
+      <p>Registro concluído. Para alterar, reabra.</p>
+      <button type="button" class="btn" id="btnReabrir" data-keep>Reabrir (senha do responsável)</button>
+    </div>
+
+    <section class="sec">
+      <header class="sec-h"><span class="sec-n">01</span><h2>Identificação</h2></header>
+      <div class="sec-b grid2">
+        <label class="fld"><span>Data</span><input type="date" id="data" data-bind="data"></label>
+        <label class="fld"><span>Responsável pela coleta de dados</span><input type="text" id="responsavel" data-bind="responsavel" autocomplete="name"></label>
+      </div>
+    </section>
+
+    <section class="sec">
+      <header class="sec-h"><span class="sec-n">02</span><h2>Números do dia</h2></header>
+      <div class="sec-b">
+        <div class="grid2">
+          <label class="fld"><span>Prévia do dia</span><input class="n" type="text" inputmode="numeric" id="previaDia" data-bind="previaDia" autocomplete="off"></label>
+          <label class="fld"><span>Refeição externa</span><input class="n" type="text" inputmode="numeric" id="refExterna" data-bind="refExterna" autocomplete="off" placeholder="0"></label>
+        </div>
+        <div class="derived" id="baseBox"><span>A servir no rancho</span><b id="baseVal">—</b></div>
+        <label class="fld"><span>Inicial da catraca</span><input class="n" type="text" inputmode="numeric" id="catInicial" data-bind="catInicial" autocomplete="off"></label>
+      </div>
+    </section>
+
+    <section class="sec">
+      <header class="sec-h"><span class="sec-n">03</span><h2>Acompanhamento</h2></header>
+      <div class="sec-b">
+        <label class="fld"><span>Final da catraca (leitura de agora)</span><input class="n big" type="text" inputmode="numeric" id="catFinal" data-bind="catFinal" autocomplete="off"></label>
+        <div class="result vazio" id="resBox">
+          <span class="lbl">Prévia</span>
+          <span class="val" id="resVal">—</span>
+          <span class="sub" id="resSub">Preencha os números para calcular.</span>
+        </div>
+        <div class="avisos" id="avisos"></div>
+        <button type="button" class="btn primary wide" id="btnLeitura">Registrar leitura</button>
+        <div id="leiturasWrap" hidden>
+          <table class="lt"><thead><tr><th>Hora</th><th>Catraca</th><th>Passaram</th><th>Prévia</th><th></th></tr></thead><tbody id="leituras"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <header class="sec-h"><span class="sec-n">04</span><h2>Encerramento</h2></header>
+      <div class="sec-b">
+        <label class="fld"><span>Observações</span><textarea id="obs" data-bind="obs" placeholder="Opcional"></textarea></label>
+        <div class="row">
+          <button type="button" class="btn" id="btnPdf" data-keep>Gerar PDF</button>
+          <button type="button" class="btn" id="btnEmail" data-keep>Enviar por e-mail</button>
+          <button type="button" class="btn primary" id="btnConcluir" style="margin-left:auto">Concluir</button>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section class="view" id="view-hist" hidden>
+    <div class="panel">
+      <h2>Histórico</h2>
+      <div class="filters">
+        <label class="fld"><span>Mês</span><input type="month" id="fMes"></label>
+        <label class="fld"><span>Situação</span><select id="fStatus"><option value="">Todas</option><option value="rascunho">Rascunho</option><option value="concluida">Concluída</option></select></label>
+      </div>
+      <div class="row"><a class="btn" id="lnkPlanilha" target="_blank" rel="noopener" hidden>Abrir planilha</a><button type="button" class="btn danger" id="btnSair" hidden>Sair deste aparelho</button></div>
+      <p class="note" id="storeNote"></p>
+    </div>
+    <div class="hlist" id="hlist"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="savest" id="saveState"><b>Rascunho</b><span>Guardado neste aparelho</span></div>
+    <div class="row">
+      <button type="button" class="btn ghost" id="btnNovo" data-keep>Novo</button>
+      <button type="button" class="btn primary" id="btnSalvar">Salvar</button>
+    </div>
+  </div>
+</footer>
+
+<section class="gate" id="gate" hidden>
+  <form class="gate-c" id="gateForm" novalidate>
+    <div><span class="code">Almoço · Controle pela catraca</span><h1>Prévia do Rancho</h1></div>
+    <p class="note">Digite o código de acesso da equipe.</p>
+    <label class="fld"><span>Código de acesso</span><input type="password" id="gateCodigo" autocomplete="current-password"></label>
+    <label class="fld"><span>Seu nome</span><input type="text" id="gateNome" autocomplete="name"></label>
+    <p class="gate-err" id="gateErr" role="alert" hidden></p>
+    <button type="submit" class="btn primary wide" id="gateBtn">Entrar</button>
+  </form>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="modal" id="modal" hidden>
+  <div class="modal-c" role="dialog" aria-modal="true">
+    <p id="modalMsg"></p>
+    <label class="fld" id="modalEmailWrap" hidden><span>Enviar para</span><input type="text" id="modalEmail" inputmode="email" placeholder="nome@exemplo.com, outro@exemplo.com"></label>
+    <p class="note" id="modalEmailNote" hidden>Separe vários e-mails com vírgula. O e-mail sai da conta Google do responsável pelo app.</p>
+    <label class="fld" id="modalSenhaWrap" hidden><span>Senha do responsável</span><input type="password" id="modalSenha" autocomplete="off"></label>
+    <a class="btn" id="modalLink" target="_blank" rel="noopener" hidden>Abrir PDF no Drive</a>
+    <div class="row"><button type="button" class="btn ghost" id="modalNo">Cancelar</button><button type="button" class="btn primary" id="modalYes">Confirmar</button></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* CALC-INICIO
+   Prévia (restante) = (Prévia do dia − Refeição externa) − (Final da catraca − Inicial da catraca) */
+const PreviaCalc = (function(){
+  function num(v){
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim().replace(/\./g, "");
+    if (!/^\d+$/.test(s)) return null;
+    return parseInt(s, 10);
+  }
+  function calcular(d){
+    const pd = num(d.previaDia), re = num(d.refExterna) ?? 0, ci = num(d.catInicial), cf = num(d.catFinal);
+    const out = { base: null, passaram: null, restante: null, avisos: [], ok: false };
+    if (pd !== null) out.base = pd - re;
+    if (pd !== null && re > pd) out.avisos.push("A refeição externa está maior que a prévia do dia.");
+    if (ci !== null && cf !== null) {
+      if (cf < ci) { out.avisos.push("O final da catraca está menor que o inicial. Confira os números."); return out; }
+      out.passaram = cf - ci;
+    }
+    if (out.base === null || out.passaram === null) return out;
+    out.restante = out.base - out.passaram;
+    out.ok = true;
+    if (out.restante < 0) out.avisos.push("Passou do previsto: " + Math.abs(out.restante) + " a mais que a prévia.");
+    return out;
+  }
+  return { num, calcular };
+})();
+/* CALC-FIM */
+
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } };
+const lsSet = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { return false; } };
+const pad2 = n => String(n).padStart(2, "0");
+const hoje = () => { const d = new Date(); return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()); };
+const agoraHM = () => { const d = new Date(); return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); };
+const fmtDate = s => s ? s.split("-").reverse().join("/") : "-";
+const fmtN = v => (v === null || v === undefined || v === "") ? "—" : Number(v).toLocaleString("pt-BR");
+const novoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const nomeArq = rec => "Previa_Rancho_" + (rec.data || "sem-data");
+
+let toastT = null;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
+
+/* ---------- Caixas de diálogo ---------- */
+function modal({ msg, yes = "Confirmar", no = "Cancelar", email = false, senha = false, link = "" }){
+  return new Promise(res => {
+    $("#modalMsg").textContent = msg;
+    $("#modalEmailWrap").hidden = $("#modalEmailNote").hidden = !email;
+    $("#modalSenhaWrap").hidden = !senha;
+    $("#modalLink").hidden = !link; if (link) $("#modalLink").href = link;
+    $("#modalYes").textContent = yes; $("#modalNo").textContent = no; $("#modalNo").hidden = !no;
+    if (email) $("#modalEmail").value = lsGet("previa.emails") || "";
+    $("#modalSenha").value = "";
+    $("#modal").hidden = false;
+    setTimeout(() => (email ? $("#modalEmail") : senha ? $("#modalSenha") : $("#modalYes")).focus(), 50);
+    const fim = v => { $("#modal").hidden = true; $("#modalYes").onclick = $("#modalNo").onclick = null; res(v); };
+    $("#modalYes").onclick = () => fim(email ? $("#modalEmail").value.trim() : senha ? $("#modalSenha").value : true);
+    $("#modalNo").onclick = () => fim(email || senha ? null : false);
+  });
+}
+const confirmBox = (msg, yes) => modal({ msg, yes });
+const senhaBox = msg => modal({ msg, senha: true });
+const emailBox = msg => modal({ msg, email: true, yes: "Enviar" });
+const infoBox = (msg, link) => modal({ msg, link, yes: "OK", no: "" });
+
+/* ---------- Servidor (Apps Script) ---------- */
+const API_URL = (typeof window.PREVIA_API === "string" && /^https:\/\/script\.google\.com\//.test(window.PREVIA_API)) ? window.PREVIA_API : "";
+const temRun = () => !!(window.google && google.script && google.script.run);
+const temGS = () => temRun() || !!API_URL;
+const getCodigo = () => { try { return localStorage.getItem("previa.codigo") || ""; } catch(e) { return ""; } };
+const setCodigo = v => { try { if (v) localStorage.setItem("previa.codigo", v); else localStorage.removeItem("previa.codigo"); } catch(e) {} };
+function enviarReq(req){
+  const corpo = JSON.stringify(req);
+  if (temRun()) return new Promise((res, rej) => {
+    google.script.run.withSuccessHandler(t => { try { res(JSON.parse(t)); } catch(e) { rej({ code: "servidor", message: "Resposta inválida do servidor." }); } })
+      .withFailureHandler(e => rej({ code: "rede", message: (e && e.message) || String(e) })).chamar(corpo);
+  });
+  const ctrl = ("AbortController" in window) ? new AbortController() : null;
+  const tm = ctrl ? setTimeout(() => ctrl.abort(), 60000) : null;
+  return fetch(API_URL, { method: "POST", body: corpo, redirect: "follow", signal: ctrl ? ctrl.signal : undefined })
+    .then(r => { if (!r.ok) throw { code: "servidor", message: "O servidor respondeu com erro (" + r.status + "). Confira se a implantação está em “Qualquer pessoa”." }; return r.text(); })
+    .then(t => { try { return JSON.parse(t); } catch(e) { throw { code: "servidor", message: "O servidor não respondeu como esperado. Confira o link em config.js e a implantação." }; } })
+    .catch(e => { if (e && e.code) throw e; throw { code: "rede", message: "" }; })
+    .finally(() => { if (tm) clearTimeout(tm); });
+}
+async function GS(acao, ...args){
+  if (!temGS()) throw { code: "sem_servidor", message: "" };
+  const r = await enviarReq({ acao, args, codigo: getCodigo() });
+  if (r && r.ok) return r.valor;
+  if (r && r.codigoInvalido) { setCodigo(""); mostrarAcesso("O código de acesso mudou ou não é válido. Digite o código atual."); throw { code: "codigo", message: "Código de acesso inválido." }; }
+  throw { code: "servidor", message: (r && r.erro) || "" };
+}
+function errMsg(e){
+  const m = String((e && e.message) || "").replace(/^(Exception|Error):\s*/i, "");
+  if (e && e.code === "sem_servidor") return "O app ainda não está ligado ao servidor. Confira o link em config.js.";
+  if ((e && e.code === "rede") || /network|connection|timed? ?out/i.test(m)) return "Sem conexão no momento. O rascunho continua guardado neste aparelho; toque em Salvar de novo quando houver sinal.";
+  if (e && e.code === "codigo") return "Digite o código de acesso da equipe para continuar.";
+  return m || "Não foi possível concluir a operação. Tente de novo.";
+}
+
+/* ---------- Tela de acesso ---------- */
+let acessoOk = null;
+function mostrarAcesso(msg){
+  $("#gate").hidden = false;
+  const er = $("#gateErr"); er.hidden = !msg; er.textContent = msg || "";
+  if (!$("#gateNome").value) $("#gateNome").value = lsGet("previa.nome") || "";
+  setTimeout(() => $("#gateCodigo").focus(), 50);
+}
+$("#gateForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const cod = $("#gateCodigo").value.trim(), nome = $("#gateNome").value.trim(), er = $("#gateErr");
+  if (!cod) { er.hidden = false; er.textContent = "Digite o código de acesso."; return; }
+  $("#gateBtn").disabled = true; $("#gateBtn").textContent = "Conferindo…"; er.hidden = true;
+  try {
+    const r = await enviarReq({ acao: "ping", args: [], codigo: cod });
+    if (r && r.ok) {
+      setCodigo(cod);
+      if (nome) { lsSet("previa.nome", nome); if (!S.responsavel && !isLocked()) { S.responsavel = nome; $("#responsavel").value = nome; persistDraft(); } }
+      $("#gate").hidden = true; $("#gateCodigo").value = "";
+      if (acessoOk) { const f = acessoOk; acessoOk = null; f(); } else Store.refresh();
+    } else { er.hidden = false; er.textContent = (r && r.erro) || "Não foi possível entrar."; }
+  } catch(err) { er.hidden = false; er.textContent = "Sem conexão com o servidor. Verifique a internet e tente de novo."; }
+  finally { $("#gateBtn").disabled = false; $("#gateBtn").textContent = "Entrar"; }
+});
+
+/* ---------- Armazenamento ---------- */
+const Store = {
+  mode: "local", list: [], planilha: "",
+  async init(){
+    this.list = lsGet("previa.hist") || [];
+    if (temGS()) {
+      this.mode = "gs"; this.list = lsGet("previa.cache") || [];
+      renderHist();
+      if (!getCodigo()) await new Promise(r => { acessoOk = r; mostrarAcesso(""); });
+      try { const c = await GS("getConfig"); this.planilha = c.planilha || ""; } catch(e) {}
+      await this.refresh();
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) this.refresh(); });
+    }
+    renderHist();
+  },
+  async refresh(){
+    if (this.mode !== "gs" || !getCodigo()) return;
+    try { const arr = await GS("listar"); this.list = arr.map(t => { try { return JSON.parse(t); } catch(e) { return null; } }).filter(Boolean); lsSet("previa.cache", this.list); } catch(e) {}
+    renderHist();
+  },
+  async full(rec){ if (this.mode !== "gs") return rec; return JSON.parse(await GS("obter", rec.id)); },
+  async save(rec){
+    let quando = new Date().toISOString();
+    if (this.mode === "gs") quando = await GS("salvar", JSON.stringify(rec));
+    rec.atualizadoEm = quando;
+    this.list = this.list.filter(x => x.id !== rec.id).concat([JSON.parse(JSON.stringify(rec))]);
+    lsSet(this.mode === "gs" ? "previa.cache" : "previa.hist", this.list);
+    renderHist();
+    return quando;
+  },
+  async remove(rec, senha){
+    if (this.mode === "gs") await GS("excluir", rec.id, senha);
+    this.list = this.list.filter(r => r.id !== rec.id);
+    lsSet(this.mode === "gs" ? "previa.cache" : "previa.hist", this.list); renderHist();
+  },
+  async reabrir(id, senha){ if (this.mode === "gs") await GS("reabrir", id, senha); }
+};
+
+/* ---------- Registro atual ---------- */
+function novoRegistro(){
+  return { id: novoId(), data: hoje(), responsavel: lsGet("previa.nome") || "", previaDia: "", refExterna: "", catInicial: "", catFinal: "",
+    leituras: [], obs: "", status: "rascunho", criadoEm: new Date().toISOString(), atualizadoEm: "" };
+}
+let S = lsGet("previa.rascunho") || novoRegistro();
+let dirty = !!lsGet("previa.sujo");
+const isLocked = () => S.status === "concluida";
+function persistDraft(){ lsSet("previa.rascunho", S); lsSet("previa.sujo", dirty); }
+
+function carregar(rec){
+  S = JSON.parse(JSON.stringify(rec)); S.leituras = S.leituras || [];
+  dirty = false; persistDraft();
+  $$("[data-bind]").forEach(el => el.value = S[el.dataset.bind] ?? "");
+  atualizar(); applyLock(); setSaveState();
+}
+function atualizar(){
+  const c = PreviaCalc.calcular(S);
+  $("#baseVal").textContent = fmtN(c.base);
+  const box = $("#resBox");
+  box.classList.toggle("vazio", !c.ok);
+  box.classList.toggle("neg", c.ok && c.restante < 0);
+  $("#resVal").textContent = c.ok ? fmtN(c.restante) : "—";
+  $("#resSub").textContent = c.ok ? "Já passaram " + fmtN(c.passaram) + " de " + fmtN(c.base) + " almoços." : "Preencha os números para calcular.";
+  $("#avisos").innerHTML = c.avisos.map(a => `<div class="aviso${/menor|Passou/.test(a) ? " bad" : ""}">${esc(a)}</div>`).join("");
+  ["previaDia","refExterna","catInicial","catFinal"].forEach(k => {
+    const v = S[k]; $("#" + k).classList.toggle("req", String(v || "").trim() !== "" && PreviaCalc.num(v) === null);
+  });
+  $("#btnLeitura").disabled = !c.ok || isLocked();
+  renderLeituras();
+  return c;
+}
+function renderLeituras(){
+  const L = S.leituras || [];
+  $("#leiturasWrap").hidden = !L.length;
+  $("#leituras").innerHTML = L.map((x, i) => `<tr><td>${esc(x.hora)}</td><td>${fmtN(x.catraca)}</td><td>${fmtN(x.passaram)}</td><td class="${x.restante < 0 ? "neg" : ""}">${fmtN(x.restante)}</td>` +
+    `<td class="x">${isLocked() ? "" : `<button type="button" class="mini" data-del="${i}" aria-label="Apagar leitura das ${esc(x.hora)}">×</button>`}</td></tr>`).join("");
+}
+function applyLock(){
+  const l = isLocked();
+  $("#lockBanner").hidden = !l;
+  $$("#view-form input, #view-form textarea, #view-form button").forEach(el => { if (!el.hasAttribute("data-keep")) el.disabled = l; });
+  $("#btnSalvar").disabled = l;
+  if (!l) $("#btnLeitura").disabled = !PreviaCalc.calcular(S).ok;
+  renderLeituras();
+}
+function setSaveState(busy){
+  const st = $("#saveState");
+  if (busy) { st.innerHTML = "<b>Salvando…</b><span>Aguarde</span>"; return; }
+  const sit = isLocked() ? "Concluído" : "Rascunho";
+  const onde = dirty ? (Store.mode === "gs" ? "Alterações não enviadas · guardado neste aparelho" : "Guardado neste aparelho")
+    : (S.atualizadoEm ? "Salvo às " + new Date(S.atualizadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "Guardado neste aparelho");
+  st.innerHTML = `<b>${sit} · ${fmtDate(S.data)}</b><span>${esc(onde)}</span>`;
+}
+
+$("#view-form").addEventListener("input", e => {
+  const k = e.target.dataset.bind; if (!k || isLocked()) return;
+  S[k] = e.target.value;
+  if (k === "responsavel") lsSet("previa.nome", e.target.value.trim());
+  dirty = true; persistDraft(); atualizar(); setSaveState();
+});
+$("#leituras").addEventListener("click", async e => {
+  const b = e.target.closest("[data-del]"); if (!b || isLocked()) return;
+  const i = +b.dataset.del, x = S.leituras[i];
+  if (!(await confirmBox("Apagar a leitura das " + x.hora + "?", "Apagar"))) return;
+  S.leituras.splice(i, 1); dirty = true; persistDraft(); atualizar(); setSaveState();
+});
+$("#btnLeitura").addEventListener("click", () => {
+  const c = PreviaCalc.calcular(S); if (!c.ok || isLocked()) return;
+  S.leituras.push({ hora: agoraHM(), catraca: PreviaCalc.num(S.catFinal), passaram: c.passaram, restante: c.restante });
+  dirty = true; persistDraft(); atualizar();
+  toast("Leitura das " + S.leituras[S.leituras.length - 1].hora + " registrada: prévia " + fmtN(c.restante) + ".");
+  salvar(true);
+});
+
+/* ---------- Salvar, concluir, reabrir, novo ---------- */
+async function salvar(silent){
+  if (!S.data) { if (!silent) toast("Preencha a data."); return false; }
+  setSaveState(true);
+  try { await Store.save(S); dirty = false; persistDraft(); setSaveState(); if (!silent) toast(Store.mode === "gs" ? "Salvo." : "Salvo neste aparelho."); return true; }
+  catch(e) { setSaveState(); toast(errMsg(e)); return false; }
+}
+$("#btnSalvar").addEventListener("click", () => salvar(false));
+
+$("#btnConcluir").addEventListener("click", async () => {
+  const c = PreviaCalc.calcular(S);
+  const falta = [];
+  if (!S.data) falta.push("data");
+  if (!String(S.responsavel || "").trim()) falta.push("responsável pela coleta");
+  if (!c.ok) falta.push("números do dia e final da catraca");
+  if (falta.length) { toast("Falta preencher: " + falta.join(", ") + "."); return; }
+  if (!(await confirmBox("Concluir a prévia de " + fmtDate(S.data) + "? Prévia final: " + fmtN(c.restante) + ". Depois de concluir, só o responsável reabre.", "Concluir"))) return;
+  const ult = S.leituras[S.leituras.length - 1];
+  if (!ult || ult.catraca !== PreviaCalc.num(S.catFinal)) S.leituras.push({ hora: agoraHM(), catraca: PreviaCalc.num(S.catFinal), passaram: c.passaram, restante: c.restante });
+  S.status = "concluida"; S.concluidoEm = new Date().toISOString();
+  const ok = await salvar(true);
+  if (!ok) { S.status = "rascunho"; delete S.concluidoEm; persistDraft(); return; }
+  applyLock(); setSaveState();
+  const acao = await modal({ msg: "Prévia concluída. Quer gerar o PDF ou enviar por e-mail agora?", yes: "Enviar por e-mail", no: "Só gerar o PDF" });
+  if (acao === true) emailDe(S); else pdfDe(S);
+});
+
+$("#btnReabrir").addEventListener("click", async () => {
+  const senha = await senhaBox("Reabrir a prévia de " + fmtDate(S.data) + " para alterar?");
+  if (senha == null) return;
+  try {
+    if (Store.mode === "gs") await Store.reabrir(S.id, senha);
+    S.status = "rascunho"; delete S.concluidoEm;
+    if (Store.mode !== "gs") await Store.save(S);
+    else { const r = Store.list.find(x => x.id === S.id); if (r) { r.status = "rascunho"; lsSet("previa.cache", Store.list); renderHist(); } }
+    persistDraft(); applyLock(); setSaveState(); toast("Registro reaberto.");
+  } catch(e) { toast(errMsg(e)); }
+});
+
+$("#btnNovo").addEventListener("click", async () => {
+  if (dirty && !(await confirmBox("Há alterações não salvas. Começar uma prévia nova assim mesmo? As alterações deste registro serão perdidas.", "Começar nova"))) return;
+  carregar(novoRegistro()); showView("form"); window.scrollTo(0, 0);
+});
+
+/* ---------- PDF e e-mail ---------- */
+function gerarPDF(rec){
+  if (!window.jspdf) { toast("O gerador de PDF não carregou. Conecte-se à internet uma vez e tente de novo."); return null; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const c = PreviaCalc.calcular(rec);
+  const azul = [22, 62, 102];
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(...azul);
+  doc.text("PRÉVIA DO RANCHO – ALMOÇO", 14, 18);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10.5); doc.setTextColor(40);
+  doc.text("Data: " + fmtDate(rec.data), 14, 26);
+  doc.text("Responsável pela coleta de dados: " + (rec.responsavel || "-"), 14, 32);
+  doc.text("Situação: " + (rec.status === "concluida" ? "Concluída" : "Rascunho"), 14, 38);
+  doc.autoTable({
+    startY: 44, theme: "grid", headStyles: { fillColor: azul }, didParseCell: d => { if (d.section === "head" && d.column.index === 1) d.cell.styles.halign = "right"; }, columnStyles: { 1: { halign: "right", cellWidth: 40 } },
+    head: [["Item", "Quantidade"]],
+    body: [
+      ["Prévia do dia", fmtN(PreviaCalc.num(rec.previaDia))],
+      ["(-) Refeição externa", fmtN(PreviaCalc.num(rec.refExterna) ?? 0)],
+      ["(=) A servir no rancho", fmtN(c.base)],
+      ["Inicial da catraca", fmtN(PreviaCalc.num(rec.catInicial))],
+      ["Final da catraca", fmtN(PreviaCalc.num(rec.catFinal))],
+      ["(-) Passaram pela catraca", fmtN(c.passaram)],
+      [{ content: "(=) PRÉVIA", styles: { fontStyle: "bold" } }, { content: c.ok ? fmtN(c.restante) : "—", styles: { fontStyle: "bold", textColor: c.ok && c.restante < 0 ? [174, 42, 32] : azul } }]
+    ]
+  });
+  let y = doc.lastAutoTable.finalY + 8;
+  if (c.avisos.length) { doc.setTextColor(174, 42, 32); c.avisos.forEach(a => { doc.text("Atenção: " + a, 14, y); y += 6; }); doc.setTextColor(40); y += 2; }
+  if ((rec.leituras || []).length) {
+    doc.setFont("helvetica", "bold"); doc.text("Leituras ao longo do almoço", 14, y); doc.setFont("helvetica", "normal");
+    doc.autoTable({ startY: y + 3, theme: "striped", headStyles: { fillColor: azul }, styles: { halign: "right" }, columnStyles: { 0: { halign: "left" } },
+      didParseCell: d => { if (d.section === "head") d.cell.styles.halign = d.column.index === 0 ? "left" : "right"; },
+      head: [["Hora", "Catraca", "Passaram", "Prévia"]],
+      body: rec.leituras.map(x => [x.hora, fmtN(x.catraca), fmtN(x.passaram), fmtN(x.restante)]) });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+  if (String(rec.obs || "").trim()) {
+    doc.setFont("helvetica", "bold"); doc.text("Observações", 14, y); doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(rec.obs.trim(), 180), 14, y + 6);
+  }
+  doc.setFontSize(8.5); doc.setTextColor(120);
+  doc.text("Gerado pelo app Prévia do Rancho em " + new Date().toLocaleString("pt-BR"), 14, 287);
+  return doc.output("blob");
+}
+function baixarLocal(nome, blob){
+  try { const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); } catch(e) {}
+}
+const blobB64 = blob => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
+async function pdfDe(rec){
+  const blob = gerarPDF(rec); if (!blob) return;
+  baixarLocal(nomeArq(rec) + ".pdf", blob);
+  if (Store.mode !== "gs") return;
+  toast("Guardando o PDF no Drive…");
+  try { const url = await GS("salvarPdf", rec.id, nomeArq(rec) + "_" + rec.id + ".pdf", await blobB64(blob)); infoBox("PDF guardado na pasta do app no Google Drive.", url); }
+  catch(e) { toast(errMsg(e)); }
+}
+async function emailDe(rec){
+  if (Store.mode !== "gs") { toast("O envio por e-mail funciona pelo link publicado do app."); return; }
+  if (dirty && rec === S) { if (!(await salvar(true))) return; }
+  const dest = await emailBox("Enviar o PDF da prévia de " + fmtDate(rec.data) + " por e-mail.");
+  if (dest == null) return;
+  const lista = dest.split(/[,;\s]+/).map(x => x.trim()).filter(Boolean);
+  const inval = lista.filter(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+  if (!lista.length) { toast("Informe pelo menos um e-mail."); return; }
+  if (inval.length) { toast("E-mail inválido: " + inval.join(", ")); return; }
+  lsSet("previa.emails", lista.join(", "));
+  const blob = gerarPDF(rec); if (!blob) return;
+  const c = PreviaCalc.calcular(rec);
+  const assunto = "Prévia do Rancho – almoço de " + fmtDate(rec.data);
+  const corpo = "Segue em anexo a prévia do almoço de " + fmtDate(rec.data) + ".\n\n" +
+    "Responsável pela coleta: " + (rec.responsavel || "-") + "\n" +
+    "Situação: " + (rec.status === "concluida" ? "concluída" : "rascunho") + "\n\n" +
+    "Prévia do dia: " + fmtN(PreviaCalc.num(rec.previaDia)) + "\n" +
+    "Refeição externa: " + fmtN(PreviaCalc.num(rec.refExterna) ?? 0) + "\n" +
+    "A servir no rancho: " + fmtN(c.base) + "\n" +
+    "Passaram pela catraca: " + fmtN(c.passaram) + " (de " + fmtN(PreviaCalc.num(rec.catInicial)) + " a " + fmtN(PreviaCalc.num(rec.catFinal)) + ")\n" +
+    "PRÉVIA: " + (c.ok ? fmtN(c.restante) : "—") + "\n" +
+    (String(rec.obs || "").trim() ? "\nObservações: " + rec.obs.trim() + "\n" : "") +
+    "\nEnviado pelo app Prévia do Rancho.";
+  toast("Enviando o e-mail…");
+  try { await GS("enviarPdfEmail", rec.id, nomeArq(rec) + ".pdf", await blobB64(blob), lista.join(","), assunto, corpo); toast("E-mail enviado para " + lista.join(", ") + "."); }
+  catch(e) { toast(errMsg(e)); }
+}
+$("#btnPdf").addEventListener("click", () => pdfDe(S));
+$("#btnEmail").addEventListener("click", () => emailDe(S));
+
+/* ---------- Histórico ---------- */
+function renderHist(){
+  const mes = $("#fMes").value, st = $("#fStatus").value;
+  const L = Store.list.filter(r => (!mes || String(r.data || "").startsWith(mes)) && (!st || r.status === st))
+    .sort((a, b) => String(b.data).localeCompare(String(a.data)) || String(b.atualizadoEm).localeCompare(String(a.atualizadoEm)));
+  $("#lnkPlanilha").hidden = !Store.planilha; if (Store.planilha) $("#lnkPlanilha").href = Store.planilha;
+  $("#btnSair").hidden = Store.mode !== "gs";
+  $("#storeNote").textContent = Store.mode === "gs" ? "Registros guardados na planilha do app, visíveis para toda a equipe." : "Sem servidor ligado: os registros ficam só neste aparelho.";
+  if (!L.length) { $("#hlist").innerHTML = `<div class="empty">Nenhuma prévia ${mes ? "neste mês" : "registrada"}.</div>`; return; }
+  const MES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  $("#hlist").innerHTML = L.map(r => {
+    const c = PreviaCalc.calcular(r), [y, m, d] = String(r.data || "--").split("-");
+    return `<article class="hcard"><div class="hdate"><b>${esc(d || "?")}</b><span>${esc(MES[+m - 1] || "")}</span></div>
+      <div class="hmain"><p class="hcard-t">Prévia: ${c.ok ? fmtN(c.restante) : "—"} <span class="hcard-m">de ${fmtN(c.base)}</span></p>
+      <p class="hcard-m">${esc(r.responsavel || "Sem responsável")} · ${(r.leituras || []).length} leitura(s)</p></div>
+      <span class="pill ${r.status === "concluida" ? "conc" : "rasc"}">${r.status === "concluida" ? "Concluída" : "Rascunho"}</span>
+      <div class="hact"><button type="button" class="btn" data-h="abrir" data-id="${esc(r.id)}">Abrir</button><button type="button" class="btn" data-h="pdf" data-id="${esc(r.id)}">PDF</button>
+      ${Store.mode === "gs" ? `<button type="button" class="btn" data-h="email" data-id="${esc(r.id)}">E-mail</button>` : ""}<button type="button" class="btn danger" data-h="excluir" data-id="${esc(r.id)}">Excluir</button></div></article>`;
+  }).join("");
+}
+$("#fMes").addEventListener("change", renderHist);
+$("#fStatus").addEventListener("change", renderHist);
+$("#hlist").addEventListener("click", async e => {
+  const b = e.target.closest("[data-h]"); if (!b) return;
+  const rec = Store.list.find(r => r.id === b.dataset.id); if (!rec) return;
+  const h = b.dataset.h;
+  try {
+    if (h === "abrir") {
+      if (dirty && S.id !== rec.id && !(await confirmBox("Há alterações não salvas na prévia atual. Abrir outro registro assim mesmo?", "Abrir"))) return;
+      carregar(await Store.full(rec)); showView("form"); window.scrollTo(0, 0);
+    } else if (h === "pdf") pdfDe(await Store.full(rec));
+    else if (h === "email") emailDe(await Store.full(rec));
+    else if (h === "excluir") {
+      let senha = "";
+      if (Store.mode === "gs") { senha = await senhaBox("Excluir a prévia de " + fmtDate(rec.data) + "? Isso não pode ser desfeito."); if (senha == null) return; }
+      else if (!(await confirmBox("Excluir a prévia de " + fmtDate(rec.data) + "? Isso não pode ser desfeito.", "Excluir"))) return;
+      await Store.remove(rec, senha);
+      if (S.id === rec.id) carregar(novoRegistro());
+      toast("Registro excluído.");
+    }
+  } catch(err) { toast(errMsg(err)); }
+});
+$("#btnSair").addEventListener("click", async () => {
+  if (!(await confirmBox("Sair deste aparelho? Para entrar de novo será preciso digitar o código de acesso.", "Sair"))) return;
+  setCodigo(""); try { localStorage.removeItem("previa.cache"); } catch(e) {}
+  Store.list = []; renderHist(); mostrarAcesso("");
+});
+
+/* ---------- Abas ---------- */
+function showView(v){
+  $$(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.view === v)));
+  $("#view-form").hidden = v !== "form"; $("#view-hist").hidden = v !== "hist";
+  $(".foot").hidden = v !== "form";
+  if (v === "hist") Store.refresh();
+}
+$$(".tabs button").forEach(b => b.addEventListener("click", () => showView(b.dataset.view)));
+
+/* ---------- Início ---------- */
+$("#fMes").value = hoje().slice(0, 7);
+$$("[data-bind]").forEach(el => el.value = S[el.dataset.bind] ?? "");
+S.leituras = S.leituras || [];
+atualizar(); applyLock(); setSaveState();
+Store.init();
+if ("serviceWorker" in navigator && location.protocol === "https:" && !temRun() && !/googleusercontent\.com$/.test(location.hostname)) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
