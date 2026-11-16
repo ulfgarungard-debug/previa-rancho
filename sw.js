@@ -1,6 +1,6 @@
 /* Prévia do Rancho – service worker: guarda o app no aparelho para abrir sem sinal.
    Ao publicar uma atualização, aumente o número da VERSAO. */
-const VERSAO = "previa-rev1";
+const VERSAO = "previa-rev2";
 const BASICO = [
   "./", "index.html", "config.js", "manifest.webmanifest",
   "icone-192.png", "icone-512.png", "icone-maskable-512.png", "apple-touch-icon.png",

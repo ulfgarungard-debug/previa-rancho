@@ -146,6 +146,10 @@ table.lt{width:100%;border-collapse:collapse;font-size:13.5px}
 
 <main class="wrap">
   <section class="view" id="view-form">
+    <div class="lock" id="diaBanner" hidden>
+      <p id="diaMsg"></p>
+      <div class="row"><button type="button" class="btn ghost" id="btnDiaFica" data-keep>Continuar esta</button><button type="button" class="btn primary" id="btnDiaHoje" data-keep>Começar a de hoje</button></div>
+    </div>
     <div class="lock" id="lockBanner" hidden>
       <p>Registro concluído. Para alterar, reabra.</p>
       <button type="button" class="btn" id="btnReabrir" data-keep>Reabrir (senha do responsável)</button>
@@ -349,6 +353,7 @@ function errMsg(e){
   const m = String((e && e.message) || "").replace(/^(Exception|Error):\s*/i, "");
   if (e && e.code === "sem_servidor") return "O app ainda não está ligado ao servidor. Confira o link em config.js.";
   if ((e && e.code === "rede") || /network|connection|timed? ?out/i.test(m)) return "Sem conexão no momento. O rascunho continua guardado neste aparelho; toque em Salvar de novo quando houver sinal.";
+  if (/permiss|authoriz|autoriza/i.test(m)) return "O servidor do app ainda não está autorizado. O responsável precisa rodar “autorizar” no Apps Script e publicar uma nova versão. Os dados continuam guardados neste aparelho.";
   if (e && e.code === "codigo") return "Digite o código de acesso da equipe para continuar.";
   return m || "Não foi possível concluir a operação. Tente de novo.";
 }
@@ -454,6 +459,12 @@ function renderLeituras(){
   $("#leituras").innerHTML = L.map((x, i) => `<tr><td>${esc(x.hora)}</td><td>${fmtN(x.catraca)}</td><td>${fmtN(x.passaram)}</td><td class="${x.restante < 0 ? "neg" : ""}">${fmtN(x.restante)}</td>` +
     `<td class="x">${isLocked() ? "" : `<button type="button" class="mini" data-del="${i}" aria-label="Apagar leitura das ${esc(x.hora)}">×</button>`}</td></tr>`).join("");
 }
+let diaOk = false;
+function checarDia(){
+  const velho = !diaOk && S.data && S.data < hoje();
+  $("#diaBanner").hidden = !velho;
+  if (velho) $("#diaMsg").textContent = "Esta prévia é de " + fmtDate(S.data) + ", não de hoje.";
+}
 function applyLock(){
   const l = isLocked();
   $("#lockBanner").hidden = !l;
@@ -463,6 +474,7 @@ function applyLock(){
   renderLeituras();
 }
 function setSaveState(busy){
+  checarDia();
   const st = $("#saveState");
   if (busy) { st.innerHTML = "<b>Salvando…</b><span>Aguarde</span>"; return; }
   const sit = isLocked() ? "Concluído" : "Rascunho";
@@ -512,7 +524,7 @@ $("#btnConcluir").addEventListener("click", async () => {
   if (!ult || ult.catraca !== PreviaCalc.num(S.catFinal)) S.leituras.push({ hora: agoraHM(), catraca: PreviaCalc.num(S.catFinal), passaram: c.passaram, restante: c.restante });
   S.status = "concluida"; S.concluidoEm = new Date().toISOString();
   const ok = await salvar(true);
-  if (!ok) { S.status = "rascunho"; delete S.concluidoEm; persistDraft(); return; }
+  if (!ok) { S.status = "rascunho"; delete S.concluidoEm; persistDraft(); applyLock(); setSaveState(); return; }
   applyLock(); setSaveState();
   const acao = await modal({ msg: "Prévia concluída. Quer gerar o PDF ou enviar por e-mail agora?", yes: "Enviar por e-mail", no: "Só gerar o PDF" });
   if (acao === true) emailDe(S); else pdfDe(S);
@@ -530,9 +542,11 @@ $("#btnReabrir").addEventListener("click", async () => {
   } catch(e) { toast(errMsg(e)); }
 });
 
+$("#btnDiaFica").addEventListener("click", () => { diaOk = true; checarDia(); });
+$("#btnDiaHoje").addEventListener("click", () => $("#btnNovo").click());
 $("#btnNovo").addEventListener("click", async () => {
   if (dirty && !(await confirmBox("Há alterações não salvas. Começar uma prévia nova assim mesmo? As alterações deste registro serão perdidas.", "Começar nova"))) return;
-  carregar(novoRegistro()); showView("form"); window.scrollTo(0, 0);
+  diaOk = false; carregar(novoRegistro()); showView("form"); window.scrollTo(0, 0);
 });
 
 /* ---------- PDF e e-mail ---------- */
